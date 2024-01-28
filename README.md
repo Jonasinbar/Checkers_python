@@ -1,1 +1,1 @@
-https://github.com/Jonasinbar/Checkers_python/blob/master/classes.png
+![alt text](https://github.com/Jonasinbar/Checkers_python/blob/master/classes.png)
