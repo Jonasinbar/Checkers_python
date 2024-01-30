@@ -10,17 +10,17 @@ from Player import Player
 
 
 class Game:
-    def __init__(self, player1_name, player2_name, local_mode=False):
+    def __init__(self, player1_name, player2_name, local_mode=True):
         self.player1 = Player(player1_name, constants.PLAYER_1_COLOR, constants.PLAYER_1_DIRECTION, 0)
         self.player2 = Player(player2_name, constants.PLAYER_2_COLOR, constants.PLAYER_2_DIRECTION, 0)
         self.board = Board()
         self.board.put_pieces_start_config(self.player1, self.player2)
         self.game_state = GameState(self.player1, None, [], [], None)
-
-        pygame.init()
-        self.screen = pygame.display.set_mode((self.board.width, self.board.height))
-        pygame.display.set_caption("Chekcers")
-        self.clock = pygame.time.Clock()
+        if local_mode:
+            pygame.init()
+            self.screen = pygame.display.set_mode((self.board.width, self.board.height))
+            pygame.display.set_caption("Chekcers")
+            self.clock = pygame.time.Clock()
 
     def run_game(self):
         while True:
