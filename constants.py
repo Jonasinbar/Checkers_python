@@ -1,0 +1,40 @@
+import yaml
+# Load the settings from the YAML file
+with open('settings.yaml', 'r') as yaml_file:
+    settings = yaml.safe_load(yaml_file)
+
+# Assign constants from the settings
+SIZE_BOARD = settings['SIZE_BOARD']
+NUMBER_OF_LINES_OF_DOTS_IN_START = settings['NUMBER_OF_LINES_OF_DOTS_IN_START']
+PLAYER_1_COLOR = tuple(settings['PLAYER_1_COLOR'])
+PLAYER_2_COLOR = tuple(settings['PLAYER_2_COLOR'])
+PORT = settings['PORT']
+IP_ADDRESS_SERVER = settings['IP_ADDRESS_SERVER']
+IP_ADDRESS_CLIENT = settings['IP_ADDRESS_CLIENT']
+
+
+WIDTH = 1500
+HEIGHT = 800
+WHITE = (255, 255, 255)
+GREY = (112, 112, 112)
+BLACK = (0, 0, 0)
+BROWN = (150, 75, 0)
+RED = (255, 0, 0)
+MARGIN = 60
+BOARD_LINE_WIDTH = 3
+BOARD_COLOR = BLACK
+PLAYER_1_COLOR_SELECTED = (153, 204, 255)
+PLAYER_2_COLOR_SELECTED = (255, 153, 253)
+UP_DIRECTION = "UP"
+DOWN_DIRECTION = "DOWN"
+PLAYER_1_DIRECTION = UP_DIRECTION
+PLAYER_2_DIRECTION = DOWN_DIRECTION
+CROWN_PATH = "assets\\images\\crown.png"
+
+# SIZE_BOARD = 8
+# NUMBER_OF_LINES_OF_DOTS_IN_START = 3
+# PLAYER_1_COLOR = (0, 0, 255)
+# PLAYER_2_COLOR = (255, 0, 0)
+# PORT = 5000
+# IP_ADDRESS_SERVER = "127.0.0.1"#"192.168.1.161"#"0.0.0.0"  # "87.68.181.185"#"192.168.1.161"
+# IP_ADDRESS_CLIENT = "127.0.0.1"#"192.168.1.161"#"87.68.181.48"  # "87.68.181.48"

@@ -3,16 +3,16 @@ import sys
 
 import pygame
 
-import settings
+import constants
 from Board import Board
 from GameState import GameState
 from Player import Player
 
 
 class Game:
-    def __init__(self, player1_name, player2_name):
-        self.player1 = Player(player1_name, settings.PLAYER_1_COLOR, settings.PLAYER_1_DIRECTION, 0)
-        self.player2 = Player(player2_name, settings.PLAYER_2_COLOR, settings.PLAYER_2_DIRECTION, 0)
+    def __init__(self, player1_name, player2_name, local_mode=False):
+        self.player1 = Player(player1_name, constants.PLAYER_1_COLOR, constants.PLAYER_1_DIRECTION, 0)
+        self.player2 = Player(player2_name, constants.PLAYER_2_COLOR, constants.PLAYER_2_DIRECTION, 0)
         self.board = Board()
         self.board.put_pieces_start_config(self.player1, self.player2)
         self.game_state = GameState(self.player1, None, [], [], None)
@@ -24,10 +24,10 @@ class Game:
 
     def run_game(self):
         while True:
-            self.screen.fill(settings.WHITE)
+            self.screen.fill(constants.WHITE)
             self.draw_board()
             self.draw_dots()
-            self.draw_score2()
+            self.draw_score()
             self.handle_events()
 
             # Update the display
@@ -54,39 +54,39 @@ class Game:
                         self.detect_if_winner()
 
     def draw_board(self):
-        margin = settings.MARGIN
+        margin = constants.MARGIN
         board_height = min([self.board.width, self.board.height]) - 2 * margin
 
-        for j in range(settings.SIZE_BOARD):
-            for i in range(settings.SIZE_BOARD):
-                if (j + i) % 2 != 0 and i < settings.SIZE_BOARD:
-                    pygame.draw.rect(self.screen, settings.BROWN, (
+        for j in range(constants.SIZE_BOARD):
+            for i in range(constants.SIZE_BOARD):
+                if (j + i) % 2 != 0 and i < constants.SIZE_BOARD:
+                    pygame.draw.rect(self.screen, constants.BROWN, (
                         margin + self.board.square_size * i, margin + self.board.square_size * j,
                         self.board.square_size,
                         self.board.square_size))
 
-        for i in range(settings.SIZE_BOARD + 1):
-            start_pos_vertical = (margin + (board_height / settings.SIZE_BOARD) * i, margin)
-            end_pos_vertical = (margin + board_height / settings.SIZE_BOARD * i, board_height + margin)
-            pygame.draw.line(self.screen, settings.BOARD_COLOR, start_pos_vertical, end_pos_vertical,
-                             settings.BOARD_LINE_WIDTH)
-            start_pos_horizontal = (margin, margin + (board_height / settings.SIZE_BOARD) * i)
-            end_pos_horizontal = (board_height + margin, board_height / settings.SIZE_BOARD * i + margin)
-            pygame.draw.line(self.screen, settings.BOARD_COLOR, start_pos_horizontal, end_pos_horizontal,
-                             settings.BOARD_LINE_WIDTH)
+        for i in range(constants.SIZE_BOARD + 1):
+            start_pos_vertical = (margin + (board_height / constants.SIZE_BOARD) * i, margin)
+            end_pos_vertical = (margin + board_height / constants.SIZE_BOARD * i, board_height + margin)
+            pygame.draw.line(self.screen, constants.BOARD_COLOR, start_pos_vertical, end_pos_vertical,
+                             constants.BOARD_LINE_WIDTH)
+            start_pos_horizontal = (margin, margin + (board_height / constants.SIZE_BOARD) * i)
+            end_pos_horizontal = (board_height + margin, board_height / constants.SIZE_BOARD * i + margin)
+            pygame.draw.line(self.screen, constants.BOARD_COLOR, start_pos_horizontal, end_pos_horizontal,
+                             constants.BOARD_LINE_WIDTH)
 
     def draw_dots(self):
-        for y in range(settings.SIZE_BOARD):
-            for x in range(settings.SIZE_BOARD):
+        for y in range(constants.SIZE_BOARD):
+            for x in range(constants.SIZE_BOARD):
                 if self.board.grid[x][y]:
                     self.board.check_and_set_if_is_king(x, y)
                     piece_position = self.board.position_to_coordinates((x, y))
                     pygame.draw.circle(self.screen, self.board.grid[x][y].owner.color, piece_position,
                                        self.board.square_size / 2 - 5)
-                    pygame.draw.circle(self.screen, settings.BLACK, piece_position, self.board.square_size / 2 - 5, 3)
+                    pygame.draw.circle(self.screen, constants.BLACK, piece_position, self.board.square_size / 2 - 5, 3)
                     if self.board.grid[x][y].is_king: self.draw_crown(piece_position)
         if self.game_state.selected_piece:
-            selected_color = settings.PLAYER_1_COLOR_SELECTED if self.game_state.selected_piece.owner.color == settings.PLAYER_1_COLOR else settings.PLAYER_2_COLOR_SELECTED
+            selected_color = constants.PLAYER_1_COLOR_SELECTED if self.game_state.selected_piece.owner.color == constants.PLAYER_1_COLOR else constants.PLAYER_2_COLOR_SELECTED
             piece_position = self.board.position_to_coordinates(
                 (self.game_state.selected_piece.x, self.game_state.selected_piece.y))
             pygame.draw.circle(self.screen, selected_color, piece_position,
@@ -94,10 +94,10 @@ class Game:
             if self.game_state.selected_piece.is_king: self.draw_crown(piece_position)
         if len(self.game_state.selected_piece_move_options) > 0:
             for move_option in self.game_state.selected_piece_move_options:
-                pygame.draw.circle(self.screen, settings.GREY, self.board.position_to_coordinates(move_option),
+                pygame.draw.circle(self.screen, constants.GREY, self.board.position_to_coordinates(move_option),
                                    self.board.square_size / 2 - 5 - 3)
         for piece_that_can_eat in self.game_state.pieces_that_can_eat:
-            pygame.draw.circle(self.screen, settings.BLACK, self.board.position_to_coordinates(piece_that_can_eat),
+            pygame.draw.circle(self.screen, constants.BLACK, self.board.position_to_coordinates(piece_that_can_eat),
                                self.board.square_size / 2 - 5 - 7, 1)
 
     def handle_click_on_square(self, selected_x, selected_y):
@@ -163,8 +163,8 @@ class Game:
         player1_text_surface = my_font.render(self.player1.name, False, self.player1.color)
         player2_text_surface = my_font.render(self.player2.name, False, self.player2.color)
 
-        player1_score_x = self.board.square_size * settings.SIZE_BOARD + settings.MARGIN * 2
-        player2_score_x = player1_score_x + len(self.player1.name) * 30 + settings.MARGIN * 2
+        player1_score_x = self.board.square_size * constants.SIZE_BOARD + constants.MARGIN * 2
+        player2_score_x = player1_score_x + len(self.player1.name) * 30 + constants.MARGIN * 2
 
         player1_score_text_surface = my_font.render(str(self.player1.captured_pieces), False, (0, 0, 0))
         player2_score_text_surface = my_font.render(str(self.player2.captured_pieces), False, (0, 0, 0))
@@ -182,7 +182,7 @@ class Game:
         self.screen.blit(player2_score_text_surface, (player2_score_x, 60))
 
         # Highlight current player
-        pygame.draw.rect(self.screen, settings.BLACK, (current_player_x - 5, 0, 120, 60), 2)
+        pygame.draw.rect(self.screen, constants.BLACK, (current_player_x - 5, 0, 120, 60), 2)
 
         # Draw winner message
         if winner_text_surface:
@@ -211,7 +211,7 @@ class Game:
         self.board.grid[selected_x][selected_y] = self.game_state.selected_piece
 
     def draw_crown(self, piece_position):
-        imp = pygame.image.load(settings.CROWN_PATH).convert_alpha()
+        imp = pygame.image.load(constants.CROWN_PATH).convert_alpha()
         crown_size = self.board.square_size * 0.8
         crown_small = pygame.transform.scale(imp, (crown_size, crown_size))
         crown_position = (piece_position[0] - crown_size / 2, piece_position[1] - crown_size / 2)
