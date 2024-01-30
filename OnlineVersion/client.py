@@ -6,6 +6,8 @@ import json
 import sys
 import pickle
 
+from Game import Game
+
 text = "."
 
 
@@ -39,11 +41,11 @@ class CheckersClient:
         while self.running:
             if self.current_play_situation.player1:
                 self.screen.fill(constants.WHITE)
-                self.draw_board()
-                self.draw_dots()
-                self.draw_score()
-            if self.current_play_situation.nbr_of_players != 2:
-                self.draw_waiting_screen()
+                Game.draw_board(self.screen)
+                # self.draw_dots()
+                # self.draw_score()
+            # if self.current_play_situation.nbr_of_players != 2:
+            #     self.draw_waiting_screen()
             else:
                 self.all_players_are_connected = True
 

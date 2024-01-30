@@ -18,14 +18,14 @@ class Game:
         self.game_state = GameState(self.player1, None, [], [], None)
         if local_mode:
             pygame.init()
-            self.screen = pygame.display.set_mode((self.board.width, self.board.height))
+            self.screen = pygame.display.set_mode((constants.WIDTH, constants.HEIGHT))
             pygame.display.set_caption("Chekcers")
             self.clock = pygame.time.Clock()
 
     def run_game(self):
         while True:
             self.screen.fill(constants.WHITE)
-            self.draw_board()
+            self.draw_board(self.screen)
             self.draw_dots()
             self.draw_score()
             self.handle_events()
@@ -53,26 +53,26 @@ class Game:
                             self.game_state.player_turn)
                         self.detect_if_winner()
 
-    def draw_board(self):
+    @staticmethod
+    def draw_board(screen):
         margin = constants.MARGIN
-        board_height = min([self.board.width, self.board.height]) - 2 * margin
+        board_height = min([constants.WIDTH, constants.HEIGHT]) - 2 * margin
 
         for j in range(constants.SIZE_BOARD):
             for i in range(constants.SIZE_BOARD):
                 if (j + i) % 2 != 0 and i < constants.SIZE_BOARD:
-                    pygame.draw.rect(self.screen, constants.BROWN, (
-                        margin + self.board.square_size * i, margin + self.board.square_size * j,
-                        self.board.square_size,
-                        self.board.square_size))
+                    pygame.draw.rect(screen, constants.BROWN, (
+                        margin + constants.SQUARE_SIZE * i, margin + constants.SQUARE_SIZE * j,
+                        constants.SQUARE_SIZE, constants.SQUARE_SIZE))
 
         for i in range(constants.SIZE_BOARD + 1):
             start_pos_vertical = (margin + (board_height / constants.SIZE_BOARD) * i, margin)
             end_pos_vertical = (margin + board_height / constants.SIZE_BOARD * i, board_height + margin)
-            pygame.draw.line(self.screen, constants.BOARD_COLOR, start_pos_vertical, end_pos_vertical,
+            pygame.draw.line(screen, constants.BOARD_COLOR, start_pos_vertical, end_pos_vertical,
                              constants.BOARD_LINE_WIDTH)
             start_pos_horizontal = (margin, margin + (board_height / constants.SIZE_BOARD) * i)
             end_pos_horizontal = (board_height + margin, board_height / constants.SIZE_BOARD * i + margin)
-            pygame.draw.line(self.screen, constants.BOARD_COLOR, start_pos_horizontal, end_pos_horizontal,
+            pygame.draw.line(screen, constants.BOARD_COLOR, start_pos_horizontal, end_pos_horizontal,
                              constants.BOARD_LINE_WIDTH)
 
     def draw_dots(self):
@@ -122,7 +122,7 @@ class Game:
         elif (selected_x, selected_y) in self.game_state.selected_piece_move_options:
             is_eat_move, eaten_piece = self.is_eat_move(selected_x, selected_y)
             eaten_piece_by_king = (
-            eaten_piece[0], eaten_piece[1]) if is_eat_move and self.game_state.selected_piece.is_king else None
+                eaten_piece[0], eaten_piece[1]) if is_eat_move and self.game_state.selected_piece.is_king else None
             if is_eat_move:
                 print("EAT MOVE")
                 self.make_eat_move(selected_x, selected_y, eaten_piece_by_king=eaten_piece_by_king)

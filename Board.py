@@ -8,11 +8,11 @@ from Player import Player
 class Board:
     def __init__(self):
         self.grid = [[None for _ in range(constants.SIZE_BOARD)] for _ in range(constants.SIZE_BOARD)]
-        self.width, self.height = constants.WIDTH, constants.HEIGHT  # 1000, 600
-        self.up_left = (constants.MARGIN, constants.MARGIN)
-        self.down_right = (
-            min(self.width, self.height) - constants.MARGIN, min(self.width, self.height) - constants.MARGIN)
-        self.square_size = (self.down_right[0] - self.up_left[0]) / constants.SIZE_BOARD
+        # self.width, self.height = constants.WIDTH, constants.HEIGHT  # 1000, 600
+        self.up_left = constants.UP_LEFT#(constants.MARGIN, constants.MARGIN)
+        self.down_right = constants.DOWN_RIGHT#(
+        #     min(self.width, self.height) - constants.MARGIN, min(self.width, self.height) - constants.MARGIN)
+        self.square_size = constants.SQUARE_SIZE#(self.down_right[0] - self.up_left[0]) / constants.SIZE_BOARD
 
     def put_pieces_start_config(self, player1: Player, player2: Player):
         size = len(self.grid)
