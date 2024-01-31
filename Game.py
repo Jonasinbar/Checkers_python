@@ -14,7 +14,7 @@ class Game:
         self.player1 = Player(player1_name, constants.PLAYER_1_COLOR, constants.PLAYER_1_DIRECTION, 0)
         self.player2 = Player(player2_name, constants.PLAYER_2_COLOR, constants.PLAYER_2_DIRECTION, 0)
         self.board = Board()
-        self.board.put_pieces_start_config_test(self.player1, self.player2)
+        self.board.put_pieces_start_config(self.player1, self.player2)
         self.game_state = GameState(self.player1, None, [], [], None)
         if local_mode:
             pygame.init()
@@ -130,7 +130,7 @@ class Game:
                 self.make_eat_move(selected_x, selected_y, eaten_piece_by_king=eaten_piece_by_king)
                 if self.board.can_piece_eat_return_eat_positions(self.game_state.selected_piece, all_directions=True):
                     print('CAN EAT AGAIN')
-                    self.game_state.pieces_that_can_eat = []  # self.board.get_pieces_that_can_eat(self.game_state.player_turn)
+                    self.game_state.pieces_that_can_eat = []
                     self.game_state.selected_piece_move_options = self.board.get_selected_piece_possible_next_positions(
                         self.game_state.selected_piece, only_eat_pos=True, all_directions=True)
                     print('can eat next position', self.game_state.selected_piece_move_options)
@@ -189,8 +189,6 @@ class Game:
 
         # Draw winner message
         if winner_text_surface:
-            # winner_x = player1_score_x if winner == player1 else player2_score_x
-            # winner_x += len(player1.name) * 30
             screen.blit(winner_text_surface, (player1_score_x+constants.SQUARE_SIZE*2, 180))
 
     def reset_selected_piece(self):

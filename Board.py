@@ -8,11 +8,6 @@ from Player import Player
 class Board:
     def __init__(self):
         self.grid = [[None for _ in range(constants.SIZE_BOARD)] for _ in range(constants.SIZE_BOARD)]
-        # self.width, self.height = constants.WIDTH, constants.HEIGHT  # 1000, 600
-        self.up_left = constants.UP_LEFT  # (constants.MARGIN, constants.MARGIN)
-        self.down_right = constants.DOWN_RIGHT  # (
-        #     min(self.width, self.height) - constants.MARGIN, min(self.width, self.height) - constants.MARGIN)
-        self.square_size = constants.SQUARE_SIZE  # (self.down_right[0] - self.up_left[0]) / constants.SIZE_BOARD
 
     def put_pieces_start_config(self, player1: Player, player2: Player):
         size = len(self.grid)
@@ -56,12 +51,12 @@ class Board:
         return 0 <= x < size and 0 <= y < size
 
     def click_in_board(self, given_point):
-        return self.up_left[0] <= given_point[0] <= self.down_right[0] and self.up_left[1] <= given_point[1] <= \
-            self.down_right[1]
+        return constants.UP_LEFT[0] <= given_point[0] <= constants.DOWN_RIGHT[0] and constants.UP_LEFT[1] <= given_point[1] <= \
+            constants.DOWN_RIGHT[1]
 
     def detect_square_position_from_click(self, x, y):
-        select_square_x = int(((x - constants.MARGIN) / (self.down_right[0] - constants.MARGIN)) * constants.SIZE_BOARD)
-        select_square_y = int(((y - constants.MARGIN) / (self.down_right[1] - constants.MARGIN)) * constants.SIZE_BOARD)
+        select_square_x = int(((x - constants.MARGIN) / (constants.DOWN_RIGHT[0] - constants.MARGIN)) * constants.SIZE_BOARD)
+        select_square_y = int(((y - constants.MARGIN) / (constants.DOWN_RIGHT[1] - constants.MARGIN)) * constants.SIZE_BOARD)
         return select_square_x, select_square_y
 
     @staticmethod
@@ -160,7 +155,7 @@ class Board:
     @staticmethod
     def check_and_set_if_is_king(grid, selected_x, selected_y):
         try:
-            piece = grid[selected_x][selected_y] #Board.get_piece_static(grid, (selected_x, selected_y))
+            piece = grid[selected_x][selected_y]
         except Exception as e:
             print(selected_x, selected_y, "jdidsjf")
             raise e
