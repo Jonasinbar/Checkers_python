@@ -8,11 +8,6 @@ from Player import Player
 class Board:
     def __init__(self):
         self.grid = [[None for _ in range(constants.SIZE_BOARD)] for _ in range(constants.SIZE_BOARD)]
-        self.width, self.height = constants.WIDTH, constants.HEIGHT  # 1000, 600
-        self.up_left = (constants.MARGIN, constants.MARGIN)
-        self.down_right = (
-            min(self.width, self.height) - constants.MARGIN, min(self.width, self.height) - constants.MARGIN)
-        self.square_size = (self.down_right[0] - self.up_left[0]) / constants.SIZE_BOARD
 
     def put_pieces_start_config(self, player1: Player, player2: Player):
         size = len(self.grid)
@@ -56,16 +51,18 @@ class Board:
         return 0 <= x < size and 0 <= y < size
 
     def click_in_board(self, given_point):
-        return self.up_left[0] <= given_point[0] <= self.down_right[0] and self.up_left[1] <= given_point[1] <= self.down_right[1]
+        return constants.UP_LEFT[0] <= given_point[0] <= constants.DOWN_RIGHT[0] and constants.UP_LEFT[1] <= given_point[1] <= \
+            constants.DOWN_RIGHT[1]
 
     def detect_square_position_from_click(self, x, y):
-        select_square_x = int(((x - constants.MARGIN) / (self.down_right[0] - constants.MARGIN)) * constants.SIZE_BOARD)
-        select_square_y = int(((y - constants.MARGIN) / (self.down_right[1] - constants.MARGIN)) * constants.SIZE_BOARD)
+        select_square_x = int(((x - constants.MARGIN) / (constants.DOWN_RIGHT[0] - constants.MARGIN)) * constants.SIZE_BOARD)
+        select_square_y = int(((y - constants.MARGIN) / (constants.DOWN_RIGHT[1] - constants.MARGIN)) * constants.SIZE_BOARD)
         return select_square_x, select_square_y
 
-    def position_to_coordinates(self, selected_dot):
-        coordinate_x = selected_dot[0] * self.square_size + constants.MARGIN + self.square_size / 2
-        coordinate_y = selected_dot[1] * self.square_size + constants.MARGIN + self.square_size / 2
+    @staticmethod
+    def position_to_coordinates(selected_dot):
+        coordinate_x = selected_dot[0] * constants.SQUARE_SIZE + constants.MARGIN + constants.SQUARE_SIZE / 2
+        coordinate_y = selected_dot[1] * constants.SQUARE_SIZE + constants.MARGIN + constants.SQUARE_SIZE / 2
         return coordinate_x, coordinate_y
 
     def get_pieces_that_can_eat(self, players_turn):
@@ -155,15 +152,21 @@ class Board:
                                                                             len(self.grid) - 1 - selected_piece.y))[1]
         return up_rights + up_lefts + down_lefts + down_rights
 
-    def check_and_set_if_is_king(self, selected_x, selected_y):
-        piece = self.get_piece((selected_x, selected_y))
+    @staticmethod
+    def check_and_set_if_is_king(grid, selected_x, selected_y):
+        try:
+            piece = grid[selected_x][selected_y]
+        except Exception as e:
+            print(selected_x, selected_y, "jdidsjf")
+            raise e
         if piece:
             if piece.owner.direction == constants.UP_DIRECTION and selected_y == 0:
                 piece.is_king = True
-            if piece.owner.direction == constants.DOWN_DIRECTION and selected_y == len(self.grid) - 1:
+            if piece.owner.direction == constants.DOWN_DIRECTION and selected_y == constants.SIZE_BOARD - 1:
                 piece.is_king = True
 
-    def get_selected_piece_possible_next_positions(self, selected_piece, only_eat_pos=False, all_directions=False, is_king=False):
+    def get_selected_piece_possible_next_positions(self, selected_piece, only_eat_pos=False, all_directions=False,
+                                                   is_king=False):
         selected_piece_move_options = []
         if selected_piece:
             eat_positions = self.can_piece_eat_return_eat_positions(selected_piece, all_directions=all_directions)
@@ -171,9 +174,17 @@ class Board:
             if len(eat_positions) > 0:
                 selected_piece_move_options.extend(eat_pos for eat_pos in eat_positions)
                 return selected_piece_move_options
-            if (selected_piece.owner.direction == constants.UP_DIRECTION or all_directions or is_king) and not only_eat_pos:
-                up_lefts = [(selected_piece.x - 1, selected_piece.y - 1)] if not is_king else self.get_possible_position_and_eat_for_king(start_x=selected_piece.x, start_y=selected_piece.y, x_direction=operator.sub, y_direction=operator.sub, limit=min(selected_piece.x, selected_piece.y))[0]
-                up_rights = [(selected_piece.x + 1, selected_piece.y - 1)] if not is_king else self.get_possible_position_and_eat_for_king(start_x=selected_piece.x, start_y=selected_piece.y, x_direction=operator.add, y_direction=operator.sub, limit=min(len(self.grid) - 1 - selected_piece.x, selected_piece.y))[0]
+            if (
+                    selected_piece.owner.direction == constants.UP_DIRECTION or all_directions or is_king) and not only_eat_pos:
+                up_lefts = [(selected_piece.x - 1, selected_piece.y - 1)] if not is_king else \
+                self.get_possible_position_and_eat_for_king(start_x=selected_piece.x, start_y=selected_piece.y,
+                                                            x_direction=operator.sub, y_direction=operator.sub,
+                                                            limit=min(selected_piece.x, selected_piece.y))[0]
+                up_rights = [(selected_piece.x + 1, selected_piece.y - 1)] if not is_king else \
+                self.get_possible_position_and_eat_for_king(start_x=selected_piece.x, start_y=selected_piece.y,
+                                                            x_direction=operator.add, y_direction=operator.sub,
+                                                            limit=min(len(self.grid) - 1 - selected_piece.x,
+                                                                      selected_piece.y))[0]
                 for up_right in up_rights:
                     if self.position_is_in_board(up_right) and not self.get_piece(up_right):
                         selected_piece_move_options.append(up_right)
@@ -181,9 +192,18 @@ class Board:
                     if self.position_is_in_board(up_left) and not self.get_piece(
                             up_left): selected_piece_move_options.append(up_left)
 
-            if (selected_piece.owner.direction == constants.DOWN_DIRECTION or all_directions or is_king) and not only_eat_pos:
-                down_lefts = [(selected_piece.x - 1, selected_piece.y + 1)] if not is_king else self.get_possible_position_and_eat_for_king(start_x=selected_piece.x, start_y=selected_piece.y, x_direction=operator.sub, y_direction=operator.add, limit=min(selected_piece.x, len(self.grid) - 1 - selected_piece.y))[0]
-                down_rights = [(selected_piece.x + 1, selected_piece.y + 1)] if not is_king else self.get_possible_position_and_eat_for_king(start_x=selected_piece.x, start_y=selected_piece.y, x_direction=operator.add, y_direction=operator.add, limit=min(len(self.grid) - 1 - selected_piece.x, len(self.grid) - 1 - selected_piece.y))[0]
+            if (
+                    selected_piece.owner.direction == constants.DOWN_DIRECTION or all_directions or is_king) and not only_eat_pos:
+                down_lefts = [(selected_piece.x - 1, selected_piece.y + 1)] if not is_king else \
+                self.get_possible_position_and_eat_for_king(start_x=selected_piece.x, start_y=selected_piece.y,
+                                                            x_direction=operator.sub, y_direction=operator.add,
+                                                            limit=min(selected_piece.x,
+                                                                      len(self.grid) - 1 - selected_piece.y))[0]
+                down_rights = [(selected_piece.x + 1, selected_piece.y + 1)] if not is_king else \
+                self.get_possible_position_and_eat_for_king(start_x=selected_piece.x, start_y=selected_piece.y,
+                                                            x_direction=operator.add, y_direction=operator.add,
+                                                            limit=min(len(self.grid) - 1 - selected_piece.x,
+                                                                      len(self.grid) - 1 - selected_piece.y))[0]
                 for down_right in down_rights:
                     if self.position_is_in_board(down_right) and not self.get_piece(down_right):
                         selected_piece_move_options.append(down_right)
