@@ -1,6 +1,7 @@
 import pickle
 
 import constants
+from Board import Board
 from Game import Game
 import socket
 import threading
@@ -15,7 +16,6 @@ class CheckersServer:
         self.clients = {}
         self.nbr_of_players = 0
         self.game = Game("Player1", "Player2", local_mode=False)
-        self.winner = None
 
     def handle_client(self, client_socket, player_name):
         while True:
@@ -43,18 +43,18 @@ class CheckersServer:
                         self.game.handle_click_on_square(selected_x, selected_y)
                         self.game.game_state.pieces_that_can_eat = self.game.board.get_pieces_that_can_eat(
                             self.game.game_state.player_turn)
-                        self.winner = self.game.detect_if_winner()
+                        self.game.detect_if_winner()
 
         if message['type'] == 'request_dots':
             # Send the current game state to the client
             grid = self.game.board.grid  # pickle.dumps(self.board.grid)
-            possible_moves = self.game.game_state.selected_piece_move_options
+            selected_piece_move_options = self.game.game_state.selected_piece_move_options
             player_turn = self.game.game_state.player_turn
             self.check_all_pieces_if_is_king()
             current_play_situation = CurrentPlaySituation(grid, self.game.player1, self.game.player2,
-                                                          possible_moves, self.game.game_state.selected_piece,
+                                                          selected_piece_move_options, self.game.game_state.selected_piece,
                                                           self.game.game_state.pieces_that_can_eat, player_turn,
-                                                          self.winner, self.nbr_of_players)
+                                                          self.game.game_state.winner, self.nbr_of_players)
             current_play_state_for_client = pickle.dumps(current_play_situation)
 
             client_socket.send(current_play_state_for_client)
@@ -63,7 +63,7 @@ class CheckersServer:
         for row in self.game.board.grid:
             for piece in row:
                 if getattr(piece, "owner", None):
-                    self.game.board.check_and_set_if_is_king(piece.x, piece.y)
+                    Board.check_and_set_if_is_king(self.game.board.grid, piece.x, piece.y)
 
     def start_server(self):
         server = socket.socket(socket.AF_INET, socket.SOCK_STREAM)

@@ -42,10 +42,10 @@ class CheckersClient:
             if self.current_play_situation.player1:
                 self.screen.fill(constants.WHITE)
                 Game.draw_board(self.screen)
-                # self.draw_dots()
-                # self.draw_score()
-            # if self.current_play_situation.nbr_of_players != 2:
-            #     self.draw_waiting_screen()
+                Game.draw_dots(self.screen, self.current_play_situation.grid, self.current_play_situation.selected_piece, self.current_play_situation.selected_piece_move_options, self.current_play_situation.pieces_that_can_eat)
+                Game.draw_score(self.screen, self.current_play_situation.player1, self.current_play_situation.player2, self.current_play_situation.player_turn, self.current_play_situation.winner)
+            if self.current_play_situation.nbr_of_players != 2:
+                self.draw_waiting_screen()
             else:
                 self.all_players_are_connected = True
 
@@ -75,6 +75,17 @@ class CheckersClient:
         self.client.send(b'{"type" : "request_dots"}')
         data = self.client.recv(8192 * 2 * 2)
         self.current_play_situation = pickle.loads(data)
+
+    def draw_waiting_screen(self):
+        if self.text == "..............":
+            self.text = ""
+        pygame.font.init()
+        my_font = pygame.font.SysFont('Comic Sans MS', 30)
+        text_surface = my_font.render("Waiting for other player to connect " + self.text, False,
+                                      constants.BLACK)
+        self.screen.blit(text_surface, (constants.WIDTH / 2, constants.HEIGHT / 2))
+        self.text += "."
+
 
 if __name__ == "__main__":
     client = CheckersClient()

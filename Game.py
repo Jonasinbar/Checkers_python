@@ -14,7 +14,7 @@ class Game:
         self.player1 = Player(player1_name, constants.PLAYER_1_COLOR, constants.PLAYER_1_DIRECTION, 0)
         self.player2 = Player(player2_name, constants.PLAYER_2_COLOR, constants.PLAYER_2_DIRECTION, 0)
         self.board = Board()
-        self.board.put_pieces_start_config(self.player1, self.player2)
+        self.board.put_pieces_start_config_test(self.player1, self.player2)
         self.game_state = GameState(self.player1, None, [], [], None)
         if local_mode:
             pygame.init()
@@ -26,8 +26,8 @@ class Game:
         while True:
             self.screen.fill(constants.WHITE)
             self.draw_board(self.screen)
-            self.draw_dots()
-            self.draw_score()
+            self.draw_dots(self.screen, self.board.grid, self.game_state.selected_piece, self.game_state.selected_piece_move_options, self.game_state.pieces_that_can_eat)
+            self.draw_score(self.screen, self.player1, self.player2, self.game_state.player_turn, self.game_state.winner)
             self.handle_events()
 
             # Update the display
@@ -51,6 +51,7 @@ class Game:
                         self.handle_click_on_square(selected_x, selected_y)
                         self.game_state.pieces_that_can_eat = self.board.get_pieces_that_can_eat(
                             self.game_state.player_turn)
+                        Board.check_and_set_if_is_king(self.board.grid, selected_x, selected_y)
                         self.detect_if_winner()
 
     @staticmethod
@@ -75,30 +76,31 @@ class Game:
             pygame.draw.line(screen, constants.BOARD_COLOR, start_pos_horizontal, end_pos_horizontal,
                              constants.BOARD_LINE_WIDTH)
 
-    def draw_dots(self):
+    @staticmethod
+    def draw_dots(screen, grid, selected_piece, selected_piece_move_options, pieces_that_can_eat):
         for y in range(constants.SIZE_BOARD):
             for x in range(constants.SIZE_BOARD):
-                if self.board.grid[x][y]:
-                    self.board.check_and_set_if_is_king(x, y)
-                    piece_position = self.board.position_to_coordinates((x, y))
-                    pygame.draw.circle(self.screen, self.board.grid[x][y].owner.color, piece_position,
-                                       self.board.square_size / 2 - 5)
-                    pygame.draw.circle(self.screen, constants.BLACK, piece_position, self.board.square_size / 2 - 5, 3)
-                    if self.board.grid[x][y].is_king: self.draw_crown(piece_position)
-        if self.game_state.selected_piece:
-            selected_color = constants.PLAYER_1_COLOR_SELECTED if self.game_state.selected_piece.owner.color == constants.PLAYER_1_COLOR else constants.PLAYER_2_COLOR_SELECTED
-            piece_position = self.board.position_to_coordinates(
-                (self.game_state.selected_piece.x, self.game_state.selected_piece.y))
-            pygame.draw.circle(self.screen, selected_color, piece_position,
-                               self.board.square_size / 2 - 5 - 3)
-            if self.game_state.selected_piece.is_king: self.draw_crown(piece_position)
-        if len(self.game_state.selected_piece_move_options) > 0:
-            for move_option in self.game_state.selected_piece_move_options:
-                pygame.draw.circle(self.screen, constants.GREY, self.board.position_to_coordinates(move_option),
-                                   self.board.square_size / 2 - 5 - 3)
-        for piece_that_can_eat in self.game_state.pieces_that_can_eat:
-            pygame.draw.circle(self.screen, constants.BLACK, self.board.position_to_coordinates(piece_that_can_eat),
-                               self.board.square_size / 2 - 5 - 7, 1)
+                if grid[x][y]:
+                    Board.check_and_set_if_is_king(grid, x, y)
+                    piece_position = Board.position_to_coordinates((x, y))
+                    pygame.draw.circle(screen, grid[x][y].owner.color, piece_position,
+                                       constants.SQUARE_SIZE / 2 - 5)
+                    pygame.draw.circle(screen, constants.BLACK, piece_position, constants.SQUARE_SIZE / 2 - 5, 3)
+                    if grid[x][y].is_king: Game.draw_crown(screen, piece_position)
+        if selected_piece:
+            selected_color = constants.PLAYER_1_COLOR_SELECTED if selected_piece.owner.color == constants.PLAYER_1_COLOR else constants.PLAYER_2_COLOR_SELECTED
+            piece_position = Board.position_to_coordinates(
+                (selected_piece.x, selected_piece.y))
+            pygame.draw.circle(screen, selected_color, piece_position,
+                               constants.SQUARE_SIZE / 2 - 5 - 3)
+            if selected_piece.is_king: Game.draw_crown(screen, piece_position)
+        if len(selected_piece_move_options) > 0:
+            for move_option in selected_piece_move_options:
+                pygame.draw.circle(screen, constants.GREY, Board.position_to_coordinates(move_option),
+                                   constants.SQUARE_SIZE / 2 - 5 - 3)
+        for piece_that_can_eat in pieces_that_can_eat:
+            pygame.draw.circle(screen, constants.BLACK, Board.position_to_coordinates(piece_that_can_eat),
+                               constants.SQUARE_SIZE / 2 - 5 - 7, 1)
 
     def handle_click_on_square(self, selected_x, selected_y):
         piece_clicked = self.board.get_piece((selected_x, selected_y))
@@ -156,39 +158,40 @@ class Game:
             if not self.game_state.piece_that_have_to_eat_again:
                 self.reset_selected_piece()
 
-    def draw_score(self):
+    @staticmethod
+    def draw_score(screen, player1, player2, player_turn, winner):
         pygame.font.init()
         my_font = pygame.font.SysFont('Comic Sans MS', 30)
 
-        player1_text_surface = my_font.render(self.player1.name, False, self.player1.color)
-        player2_text_surface = my_font.render(self.player2.name, False, self.player2.color)
+        player1_text_surface = my_font.render(player1.name, False, player1.color)
+        player2_text_surface = my_font.render(player2.name, False, player2.color)
 
-        player1_score_x = self.board.square_size * constants.SIZE_BOARD + constants.MARGIN * 2
-        player2_score_x = player1_score_x + len(self.player1.name) * 30 + constants.MARGIN * 2
+        player1_score_x = constants.SQUARE_SIZE * constants.SIZE_BOARD + constants.MARGIN * 2
+        player2_score_x = player1_score_x + len(player1.name) * 30 + constants.MARGIN * 2
 
-        player1_score_text_surface = my_font.render(str(self.player1.captured_pieces), False, (0, 0, 0))
-        player2_score_text_surface = my_font.render(str(self.player2.captured_pieces), False, (0, 0, 0))
+        player1_score_text_surface = my_font.render(str(player1.captured_pieces), False, (0, 0, 0))
+        player2_score_text_surface = my_font.render(str(player2.captured_pieces), False, (0, 0, 0))
 
-        current_player_x = player1_score_x if self.game_state.player_turn == self.player1 else player2_score_x
+        current_player_x = player1_score_x if player_turn == player1 else player2_score_x
 
         winner_text_surface = None
-        if self.game_state.winner:
-            winner_text_surface = my_font.render(self.game_state.winner.name + " is the Winner !!", False, (0, 0, 0))
+        if winner:
+            winner_text_surface = my_font.render(winner.name + " is the Winner !!", False, (0, 0, 0))
 
         # Draw player names and scores
-        self.screen.blit(player1_text_surface, (player1_score_x, self.player1.captured_pieces))
-        self.screen.blit(player2_text_surface, (player2_score_x, self.player2.captured_pieces))
-        self.screen.blit(player1_score_text_surface, (player1_score_x, 60))
-        self.screen.blit(player2_score_text_surface, (player2_score_x, 60))
+        screen.blit(player1_text_surface, (player1_score_x, player1.captured_pieces))
+        screen.blit(player2_text_surface, (player2_score_x, player2.captured_pieces))
+        screen.blit(player1_score_text_surface, (player1_score_x, 60))
+        screen.blit(player2_score_text_surface, (player2_score_x, 60))
 
         # Highlight current player
-        pygame.draw.rect(self.screen, constants.BLACK, (current_player_x - 5, 0, 120, 60), 2)
+        pygame.draw.rect(screen, constants.BLACK, (current_player_x - 5, 0, 120, 60), 2)
 
         # Draw winner message
         if winner_text_surface:
-            winner_x = player1_score_x if self.game_state.winner == self.player1 else player2_score_x
-            winner_x += len(self.player1.name) * 30
-            self.screen.blit(winner_text_surface, (winner_x, 180))
+            # winner_x = player1_score_x if winner == player1 else player2_score_x
+            # winner_x += len(player1.name) * 30
+            screen.blit(winner_text_surface, (player1_score_x+constants.SQUARE_SIZE*2, 180))
 
     def reset_selected_piece(self):
         self.game_state.selected_piece = None
@@ -210,12 +213,13 @@ class Game:
         self.game_state.selected_piece.y = selected_y
         self.board.grid[selected_x][selected_y] = self.game_state.selected_piece
 
-    def draw_crown(self, piece_position):
+    @staticmethod
+    def draw_crown(screen, piece_position):
         imp = pygame.image.load(constants.CROWN_PATH).convert_alpha()
-        crown_size = self.board.square_size * 0.8
+        crown_size = constants.SQUARE_SIZE * 0.8
         crown_small = pygame.transform.scale(imp, (crown_size, crown_size))
         crown_position = (piece_position[0] - crown_size / 2, piece_position[1] - crown_size / 2)
-        self.screen.blit(crown_small, crown_position)
+        screen.blit(crown_small, crown_position)
 
     def is_eat_move_from_king_return_eaten_piece(self, selected_x, selected_y):
         opponentpiece_encountered = False
@@ -258,13 +262,16 @@ class Game:
             self.game_state.winner = self.player1 if number_of_player2_pieces == 0 else self.player2
         if not self.can_player_make_one_move(self.player1):
             self.game_state.winner = self.player2
+            print("Dmdsksfms")
         if not self.can_player_make_one_move(self.player2):
             self.game_state.winner = self.player1
+            print("mfkdslfnmskfmmf")
 
     def can_player_make_one_move(self, player):
         for row in self.board.grid:
             for piece in row:
                 if getattr(piece, "owner", None) == player:
+                    print(player.name, piece.is_king, piece.x, piece.y)
                     if len(self.board.get_selected_piece_possible_next_positions(piece, is_king=piece.is_king)):
                         return True
         return False
