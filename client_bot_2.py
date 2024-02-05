@@ -1,3 +1,5 @@
+from CheckersMove import CheckersMove
+import random
 import constants
 import pygame
 import socket
@@ -22,6 +24,7 @@ def append_settings_from_server(settings_server):
 class CheckersClient:
     def __init__(self):
         self.all_players_are_connected = False
+        self.piece_that_just_ate = None
         self.text = ""
         self.width = constants.WIDTH
         self.height = constants.HEIGHT
@@ -40,6 +43,7 @@ class CheckersClient:
         self.client.send(b'{"type" : "request_name"}')
         data = self.client.recv(8192 * 2 * 2).decode()
         pygame.display.set_caption(f"{data}'s Game")
+        self.name = data
         self.client.send(b'{"type" : "request_settings"}')
         data_settings = self.client.recv(8192 * 2 * 2).decode()
         append_settings_from_server(json.loads(data_settings))
@@ -60,6 +64,39 @@ class CheckersClient:
                 self.all_players_are_connected = True
 
             self.handle_events()
+            if self.current_play_situation.player_turn.name == self.name:
+                move = self.get_bot_move()
+                x, y = self.current_play_situation.board.position_to_coordinates((move.start_x, move.start_y))
+                print(x, y)
+                message_select = {
+                    'type': 'click',
+                    'position': (x, y),
+                }
+                if self.all_players_are_connected:
+                    self.client.send(json.dumps(message_select).encode('utf-8'))
+
+                # Request the latest game state from the server
+                self.client.send(b'{"type" : "request_dots"}')
+                data = self.client.recv(8192 * 2 * 2)
+                self.current_play_situation = pickle.loads(data)
+
+                x, y = self.current_play_situation.board.position_to_coordinates((move.end_x, move.end_y))
+                print(x, y)
+                message_move = {
+                    'type': 'click',
+                    'position': (x, y),
+                }
+                if self.all_players_are_connected:
+                    self.client.send(json.dumps(message_move).encode('utf-8'))
+
+            else:
+                self.piece_that_just_ate = None
+            # Request the latest game state from the server
+            self.client.send(b'{"type" : "request_dots"}')
+            data = self.client.recv(8192 * 2 * 2)
+            self.current_play_situation = pickle.loads(data)
+
+
             pygame.display.flip()
             clock.tick(10)
 
@@ -86,6 +123,44 @@ class CheckersClient:
         data = self.client.recv(8192 * 2 * 2)
         self.current_play_situation = pickle.loads(data)
 
+    def get_bot_move(self):
+        moves = self.get_available_moves()
+        for move in moves:
+            print(move.start_x, move.start_y, move.end_x, move.end_y, move.is_eat_move)
+        chosen_move = moves[0]
+        if chosen_move.is_eat_move:
+            self.piece_that_just_ate = (chosen_move.end_x, chosen_move.end_y)
+        else:
+            self.piece_that_just_ate = None
+        # chosen_move = random.choice(moves)
+        return chosen_move
+
+    def get_available_moves(self):
+        available_moves = []
+        if self.piece_that_just_ate:
+            piece_obj = self.current_play_situation.board.get_piece(self.piece_that_just_ate)
+            if piece_obj:
+                eat_again_positions = self.current_play_situation.board.can_piece_eat_return_eat_positions(piece_obj, all_directions=True)
+                if eat_again_positions:
+                    available_moves.append(CheckersMove(self.piece_that_just_ate[0], self.piece_that_just_ate[1], eat_again_positions[0][0], eat_again_positions[0][1], True))
+                    return available_moves
+        # Check if there are pieces that can eat
+        if self.current_play_situation.pieces_that_can_eat:
+            # If there are pieces that can eat, prioritize those moves
+            for piece in self.current_play_situation.pieces_that_can_eat:
+                # Get possible next positions for the selected piece
+                piece_obj = self.current_play_situation.board.get_piece(piece)
+                possible_next_positions = self.current_play_situation.board.get_selected_piece_possible_next_positions(piece_obj, only_eat_pos=True)
+                for position in possible_next_positions:
+                    available_moves.append(CheckersMove(piece_obj.x, piece_obj.y, position[0], position[1], True))
+        else:
+            for row in self.current_play_situation.board.grid:
+                for piece in row:
+                    if piece and piece.owner == self.current_play_situation.player_turn:
+                        possible_next_positions = self.current_play_situation.board.get_selected_piece_possible_next_positions(piece)
+                        for position in possible_next_positions:
+                            available_moves.append(CheckersMove(piece.x, piece.y, position[0], position[1], False))
+        return available_moves
     def draw_waiting_screen(self):
         if self.text == "..............":
             self.text = ""

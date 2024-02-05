@@ -52,7 +52,7 @@ class CheckersClient:
             if self.current_play_situation.player1:
                 self.screen.fill(constants.WHITE)
                 Game.draw_board(self.screen)
-                Game.draw_dots(self.screen, self.current_play_situation.board.grid, self.current_play_situation.selected_piece, self.current_play_situation.selected_piece_move_options, self.current_play_situation.pieces_that_can_eat)
+                Game.draw_dots(self.screen, self.current_play_situation.grid, self.current_play_situation.selected_piece, self.current_play_situation.selected_piece_move_options, self.current_play_situation.pieces_that_can_eat)
                 Game.draw_score(self.screen, self.current_play_situation.player1, self.current_play_situation.player2, self.current_play_situation.player_turn, self.current_play_situation.winner)
             if self.current_play_situation.nbr_of_players != 2:
                 self.draw_waiting_screen()
