@@ -56,11 +56,11 @@ class CheckersServer:
 
         if message['type'] == 'request_dots':
             # Send the current game state to the client
-            grid = self.game.board.grid  # pickle.dumps(self.board.grid)
+            board = self.game.board  # pickle.dumps(self.board.grid)
             selected_piece_move_options = self.game.game_state.selected_piece_move_options
             player_turn = self.game.game_state.player_turn
             self.check_all_pieces_if_is_king()
-            current_play_situation = CurrentPlaySituation(grid, self.game.player1, self.game.player2,
+            current_play_situation = CurrentPlaySituation(board, self.game.player1, self.game.player2,
                                                           selected_piece_move_options,
                                                           self.game.game_state.selected_piece,
                                                           self.game.game_state.pieces_that_can_eat, player_turn,
