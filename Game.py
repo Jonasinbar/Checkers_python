@@ -6,17 +6,21 @@ import pygame
 import constants
 from Board import Board
 from GameState import GameState
-from Player import Player
+from Player import Player, BotPlayer
 
 
 class Game:
-    def __init__(self, player1_name, player2_name, local_mode=True):
-        self.player1 = Player(player1_name, constants.PLAYER_1_COLOR, constants.PLAYER_1_DIRECTION, 0)
-        self.player2 = Player(player2_name, constants.PLAYER_2_COLOR, constants.PLAYER_2_DIRECTION, 0)
+    def __init__(self, player1_name, player2_name, online_mode=False, against_bot=False):
+        self.player1 = BotPlayer(player1_name, constants.PLAYER_1_COLOR, constants.PLAYER_1_DIRECTION, 0, 2)
+        if against_bot:
+            self.player2 = BotPlayer(player2_name, constants.PLAYER_2_COLOR, constants.PLAYER_2_DIRECTION, 0, 2)
+        else:
+            self.player2 = Player(player2_name, constants.PLAYER_2_COLOR, constants.PLAYER_2_DIRECTION, 0)
         self.board = Board()
         self.board.put_pieces_start_config(self.player1, self.player2)
         self.game_state = GameState(self.player1, None, [], [], None)
-        if local_mode:
+        self.against_bot = against_bot
+        if not online_mode:
             pygame.init()
             self.screen = pygame.display.set_mode((constants.WIDTH, constants.HEIGHT))
             pygame.display.set_caption("Chekcers")
@@ -29,10 +33,12 @@ class Game:
             self.draw_dots(self.screen, self.board.grid, self.game_state.selected_piece, self.game_state.selected_piece_move_options, self.game_state.pieces_that_can_eat)
             self.draw_score(self.screen, self.player1, self.player2, self.game_state.player_turn, self.game_state.winner)
             self.handle_events()
+            if self.against_bot and isinstance(self.game_state.player_turn, BotPlayer):
+                bot_move = self.game_state.player_turn.make_play_decision(self.board, self.game_state)
+                self.make_move(bot_move)
+                self.detect_if_winner()
 
-            # Update the display
             pygame.display.flip()
-
             # Control the frames per second (FPS)
             self.clock.tick(10)
 
@@ -274,7 +280,15 @@ class Game:
                         return True
         return False
 
+    def make_move(self, bot_move):
+        if bot_move and not self.game_state.winner:
+            self.handle_click_on_square(bot_move.start_x, bot_move.start_y)
+            self.handle_click_on_square(bot_move.end_x, bot_move.end_y)
+            Board.check_and_set_if_is_king(self.board.grid, bot_move.end_x, bot_move.end_y)
+            self.game_state.pieces_that_can_eat = self.board.get_pieces_that_can_eat(
+                self.game_state.player_turn)
+
 
 if __name__ == "__main__":
-    game = Game("Player1", "Player2")
+    game = Game("Player1", "Player2", against_bot=True)
     game.run_game()

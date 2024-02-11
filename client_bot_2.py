@@ -1,5 +1,4 @@
 from CheckersMove import CheckersMove
-import random
 import constants
 import pygame
 import socket

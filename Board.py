@@ -6,8 +6,11 @@ from Player import Player
 
 
 class Board:
-    def __init__(self):
-        self.grid = [[None for _ in range(constants.SIZE_BOARD)] for _ in range(constants.SIZE_BOARD)]
+    def __init__(self, grid=None):
+        if not grid:
+            self.grid = [[None for _ in range(constants.SIZE_BOARD)] for _ in range(constants.SIZE_BOARD)]
+        else:
+            self.grid = grid
 
     def put_pieces_start_config(self, player1: Player, player2: Player):
         size = len(self.grid)
@@ -17,6 +20,16 @@ class Board:
                     self.grid[x][y] = Piece(player2, x, y)
                 if y >= size - constants.NUMBER_OF_LINES_OF_DOTS_IN_START and (y + x) % 2 != 0:
                     self.grid[x][y] = Piece(player1, x, y)
+
+    def print_board(self):
+        size = len(self.grid)
+        for y in range(size):
+            for x in range(size):
+                if self.grid[x][y] is None:
+                    print("XXXXXXX", end=" ")
+                else:
+                    print(self.grid[x][y].owner.name, end=" ")  # Assuming Piece class has a symbol attribute
+            print()
 
     def put_pieces_start_config_test(self, player1: Player, player2: Player):
         self.grid[1][6] = Piece(player1, 1, 6)
@@ -195,15 +208,15 @@ class Board:
             if (
                     selected_piece.owner.direction == constants.DOWN_DIRECTION or all_directions or is_king) and not only_eat_pos:
                 down_lefts = [(selected_piece.x - 1, selected_piece.y + 1)] if not is_king else \
-                self.get_possible_position_and_eat_for_king(start_x=selected_piece.x, start_y=selected_piece.y,
-                                                            x_direction=operator.sub, y_direction=operator.add,
-                                                            limit=min(selected_piece.x,
-                                                                      len(self.grid) - 1 - selected_piece.y))[0]
+                    self.get_possible_position_and_eat_for_king(start_x=selected_piece.x, start_y=selected_piece.y,
+                                                                x_direction=operator.sub, y_direction=operator.add,
+                                                                limit=min(selected_piece.x,
+                                                                          len(self.grid) - 1 - selected_piece.y))[0]
                 down_rights = [(selected_piece.x + 1, selected_piece.y + 1)] if not is_king else \
-                self.get_possible_position_and_eat_for_king(start_x=selected_piece.x, start_y=selected_piece.y,
-                                                            x_direction=operator.add, y_direction=operator.add,
-                                                            limit=min(len(self.grid) - 1 - selected_piece.x,
-                                                                      len(self.grid) - 1 - selected_piece.y))[0]
+                    self.get_possible_position_and_eat_for_king(start_x=selected_piece.x, start_y=selected_piece.y,
+                                                                x_direction=operator.add, y_direction=operator.add,
+                                                                limit=min(len(self.grid) - 1 - selected_piece.x,
+                                                                          len(self.grid) - 1 - selected_piece.y))[0]
                 for down_right in down_rights:
                     if self.position_is_in_board(down_right) and not self.get_piece(down_right):
                         selected_piece_move_options.append(down_right)

@@ -15,7 +15,7 @@ class CheckersServer:
     def __init__(self):
         self.clients = {}
         self.nbr_of_players = 0
-        self.game = Game("Player1", "Player2", local_mode=False)
+        self.game = Game("Player1", "Player2", online_mode=True)
 
     def handle_client(self, client_socket, player_name):
         while True:
