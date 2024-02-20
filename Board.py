@@ -170,7 +170,7 @@ class Board:
         try:
             piece = grid[selected_x][selected_y]
         except Exception as e:
-            print(selected_x, selected_y, "jdidsjf")
+            print(selected_x, selected_y, "error")
             raise e
         if piece:
             if piece.owner.direction == constants.UP_DIRECTION and selected_y == 0:

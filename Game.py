@@ -1,6 +1,6 @@
 import operator
 import sys
-
+from pprint import pprint
 import pygame
 
 import constants
@@ -10,38 +10,47 @@ from Player import Player, BotPlayer
 
 
 class Game:
-    def __init__(self, player1_name, player2_name, online_mode=False, against_bot=False):
-        self.player1 = BotPlayer(player1_name, constants.PLAYER_1_COLOR, constants.PLAYER_1_DIRECTION, 0, 2)
+    def __init__(self, player1_name, player2_name, online_mode=False, against_bot=False, is_simulation=False):
+        if is_simulation:
+            self.player1 = BotPlayer(player1_name, constants.PLAYER_1_COLOR, constants.PLAYER_1_DIRECTION, 0, player1_name)
+        else:
+            self.player1 = Player(player1_name, constants.PLAYER_1_COLOR, constants.PLAYER_1_DIRECTION, 0)
         if against_bot:
-            self.player2 = BotPlayer(player2_name, constants.PLAYER_2_COLOR, constants.PLAYER_2_DIRECTION, 0, 2)
+            self.player2 = BotPlayer(player2_name, constants.PLAYER_2_COLOR, constants.PLAYER_2_DIRECTION, 0, player2_name)
         else:
             self.player2 = Player(player2_name, constants.PLAYER_2_COLOR, constants.PLAYER_2_DIRECTION, 0)
         self.board = Board()
         self.board.put_pieces_start_config(self.player1, self.player2)
         self.game_state = GameState(self.player1, None, [], [], None)
         self.against_bot = against_bot
-        if not online_mode:
+        self.is_simulation = is_simulation
+        self.game_runs = True
+        self.total_number_of_moves = 0
+        if not online_mode and not self.is_simulation:
             pygame.init()
-            self.screen = pygame.display.set_mode((constants.WIDTH, constants.HEIGHT))
+            self.screen = pygame.display.set_mode((constants.WIDTH, constants.HEIGHT), pygame.RESIZABLE)
             pygame.display.set_caption("Chekcers")
             self.clock = pygame.time.Clock()
 
     def run_game(self):
-        while True:
-            self.screen.fill(constants.WHITE)
-            self.draw_board(self.screen)
-            self.draw_dots(self.screen, self.board.grid, self.game_state.selected_piece, self.game_state.selected_piece_move_options, self.game_state.pieces_that_can_eat)
-            self.draw_score(self.screen, self.player1, self.player2, self.game_state.player_turn, self.game_state.winner)
-            self.handle_events()
+        while self.game_runs:
+            if not self.is_simulation:
+                self.screen.fill(constants.WHITE)
+                self.draw_board(self.screen)
+                self.draw_dots(self.screen, self.board.grid, self.game_state.selected_piece, self.game_state.selected_piece_move_options, self.game_state.pieces_that_can_eat)
+                self.draw_score(self.screen, self.player1, self.player2, self.game_state.player_turn, self.game_state.winner)
+                self.handle_events()
             if self.against_bot and isinstance(self.game_state.player_turn, BotPlayer):
                 bot_move = self.game_state.player_turn.make_play_decision(self.board, self.game_state)
-                self.make_move(bot_move)
+                if bot_move:
+                    self.make_move(bot_move)
+                    self.total_number_of_moves+= 1
                 self.detect_if_winner()
-
-            pygame.display.flip()
-            # Control the frames per second (FPS)
-            self.clock.tick(10)
-
+            if not self.is_simulation:
+                pygame.display.flip()
+                # Control the frames per second (FPS)
+                self.clock.tick(1000)
+        return self.game_state
     def handle_events(self):
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
@@ -49,16 +58,22 @@ class Game:
                 sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 x, y = event.pos
-                print("absolute:", x, y)
                 if self.board.click_in_board((x, y)):
                     if not self.game_state.winner:
                         selected_x, selected_y = self.board.detect_square_position_from_click(x, y)
-                        print("selected_x : ", selected_x, "selected_y", selected_y)
                         self.handle_click_on_square(selected_x, selected_y)
                         self.game_state.pieces_that_can_eat = self.board.get_pieces_that_can_eat(
                             self.game_state.player_turn)
                         Board.check_and_set_if_is_king(self.board.grid, selected_x, selected_y)
                         self.detect_if_winner()
+            elif event.type == pygame.VIDEORESIZE:
+                # Handle window resizing event
+                new_width, new_height = event.size
+                constants.WIDTH, constants.HEIGHT = new_width, new_height
+                constants.UP_LEFT = (constants.MARGIN, constants.MARGIN)
+                constants.DOWN_RIGHT = (min(constants.WIDTH, constants.HEIGHT) - constants.MARGIN, min(constants.WIDTH, constants.HEIGHT) - constants.MARGIN)
+                if constants.SIZE_BOARD:
+                    constants.SQUARE_SIZE = (constants.DOWN_RIGHT[0] - constants.UP_LEFT[0]) / constants.SIZE_BOARD
 
     @staticmethod
     def draw_board(screen):
@@ -117,7 +132,6 @@ class Game:
             if self.game_state.piece_that_have_to_eat_again:
                 if self.game_state.piece_that_have_to_eat_again == self.game_state.selected_piece:
                     # do nothing until you do the eat move
-                    print("do nothing")
                     return
             if not_your_turn or you_have_to_eat:
                 self.reset_selected_piece()
@@ -132,14 +146,11 @@ class Game:
             eaten_piece_by_king = (
                 eaten_piece[0], eaten_piece[1]) if is_eat_move and self.game_state.selected_piece.is_king else None
             if is_eat_move:
-                print("EAT MOVE")
                 self.make_eat_move(selected_x, selected_y, eaten_piece_by_king=eaten_piece_by_king)
                 if self.board.can_piece_eat_return_eat_positions(self.game_state.selected_piece, all_directions=True):
-                    print('CAN EAT AGAIN')
                     self.game_state.pieces_that_can_eat = []
                     self.game_state.selected_piece_move_options = self.board.get_selected_piece_possible_next_positions(
                         self.game_state.selected_piece, only_eat_pos=True, all_directions=True)
-                    print('can eat next position', self.game_state.selected_piece_move_options)
                     self.game_state.piece_that_have_to_eat_again = self.game_state.selected_piece
                 else:
                     self.game_state.selected_piece = None
@@ -262,20 +273,22 @@ class Game:
                                        getattr(getattr(piece, "owner", None), "color", None) == self.player1.color)
         number_of_player2_pieces = sum(1 for row in self.board.grid for piece in row if
                                        getattr(getattr(piece, "owner", None), "color", None) == self.player2.color)
+        if self.total_number_of_moves > 200:
+            print("WAW")
+            self.game_state.winner = self.player1 if number_of_player1_pieces > number_of_player2_pieces else self.player2
         if number_of_player1_pieces == 0 or number_of_player2_pieces == 0:
             self.game_state.winner = self.player1 if number_of_player2_pieces == 0 else self.player2
         if not self.can_player_make_one_move(self.player1):
             self.game_state.winner = self.player2
-            print("Dmdsksfms")
         if not self.can_player_make_one_move(self.player2):
             self.game_state.winner = self.player1
-            print("mfkdslfnmskfmmf")
+        if self.is_simulation and self.game_state.winner:
+            self.game_runs = False
 
     def can_player_make_one_move(self, player):
         for row in self.board.grid:
             for piece in row:
                 if getattr(piece, "owner", None) == player:
-                    print(player.name, piece.is_king, piece.x, piece.y)
                     if len(self.board.get_selected_piece_possible_next_positions(piece, is_king=piece.is_king)):
                         return True
         return False
@@ -290,5 +303,7 @@ class Game:
 
 
 if __name__ == "__main__":
-    game = Game("Player1", "Player2", against_bot=True)
-    game.run_game()
+    game = Game("Kelly", "no_danger", against_bot=True)
+    game_state = game.run_game()
+
+
