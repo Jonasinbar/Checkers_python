@@ -1,5 +1,4 @@
 from CheckersMove import CheckersMove
-import random
 import constants
 import pygame
 import socket
@@ -67,7 +66,6 @@ class CheckersClient:
             if self.current_play_situation.player_turn.name == self.name:
                 move = self.get_bot_move()
                 x, y = self.current_play_situation.board.position_to_coordinates((move.start_x, move.start_y))
-                print(x, y)
                 message_select = {
                     'type': 'click',
                     'position': (x, y),
@@ -81,7 +79,6 @@ class CheckersClient:
                 self.current_play_situation = pickle.loads(data)
 
                 x, y = self.current_play_situation.board.position_to_coordinates((move.end_x, move.end_y))
-                print(x, y)
                 message_move = {
                     'type': 'click',
                     'position': (x, y),
@@ -110,7 +107,6 @@ class CheckersClient:
                 sys.exit()
             elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1:
                 x, y = event.pos
-                print(x, y)
                 message = {
                     'type': 'click',
                     'position': (x, y),
@@ -125,8 +121,6 @@ class CheckersClient:
 
     def get_bot_move(self):
         moves = self.get_available_moves()
-        for move in moves:
-            print(move.start_x, move.start_y, move.end_x, move.end_y, move.is_eat_move)
         chosen_move = moves[0]
         if chosen_move.is_eat_move:
             self.piece_that_just_ate = (chosen_move.end_x, chosen_move.end_y)
